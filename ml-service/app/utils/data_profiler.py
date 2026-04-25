@@ -47,6 +47,14 @@ class DataProfiler:
             if candidate in lowered:
                 return lowered[candidate]
 
+        if len(df.columns):
+            last_col = df.columns[-1]
+            last_lower = last_col.lower()
+            if any(token in last_lower for token in ["target", "label", "probability", "score", "risk", "outcome"]):
+                return last_col
+            if pd.api.types.is_numeric_dtype(df[last_col]) and df[last_col].nunique(dropna=True) > 20:
+                return last_col
+
         for col in reversed(df.columns.tolist()):
             unique_count = df[col].nunique(dropna=True)
             if 1 < unique_count <= min(20, max(2, int(len(df) * 0.2))):

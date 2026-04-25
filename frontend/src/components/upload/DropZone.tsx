@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import axios from 'axios';
 import { AlertCircle, FileUp, Loader2 } from 'lucide-react';
 
 import { uploadDataset } from '../../lib/api';
@@ -22,7 +23,12 @@ export function DropZone() {
       const profile = await uploadDataset(file);
       setProfile(profile);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'Upload failed. Try a smaller file.');
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message ?? error.response?.data?.detail ?? error.message
+        : error instanceof Error
+          ? error.message
+          : 'Upload failed. Try a smaller file.';
+      setUploadError(message);
     } finally {
       setUploading(false);
     }
