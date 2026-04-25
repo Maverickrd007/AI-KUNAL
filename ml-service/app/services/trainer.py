@@ -57,6 +57,12 @@ def algorithm_name(algorithm: str) -> str:
 
 
 class ModelTrainer:
+    TRAINING_ROW_LIMITS = {
+        "fast": 3000,
+        "balanced": 6000,
+        "thorough": 15000,
+    }
+
     def dataset_path(self, dataset_id: str) -> Path:
         directory = upload_dir()
         candidates = [
@@ -73,7 +79,7 @@ class ModelTrainer:
         raise FileNotFoundError(f"Dataset {dataset_id} was not found")
 
     def build_model(self, algorithm: Algorithm, problem_type: str, mode: str) -> BaseEstimator:
-        n_estimators = {"fast": 60, "balanced": 140, "thorough": 240}[mode]
+        n_estimators = {"fast": 25, "balanced": 45, "thorough": 90}[mode]
         max_iter = {"fast": 400, "balanced": 800, "thorough": 1200}[mode]
         neighbors = {"fast": 5, "balanced": 7, "thorough": 11}[mode]
 
@@ -136,6 +142,34 @@ class ModelTrainer:
             encoded = pd.Series(encoder.fit_transform(y.astype(str)), index=y.index)
             return encoded, encoder
         return pd.to_numeric(y, errors="coerce"), None
+
+    def limit_training_rows(
+        self,
+        x: pd.DataFrame,
+        y: pd.Series,
+        problem_type: str,
+        mode: str,
+    ) -> tuple[pd.DataFrame, pd.Series, int]:
+        limit = self.TRAINING_ROW_LIMITS[mode]
+        if len(x) <= limit:
+            return x, y, len(x)
+
+        if problem_type == "classification" and y.nunique() > 1:
+            sampled_parts: list[pd.DataFrame] = []
+            frame = x.copy()
+            frame["__target__"] = y
+            fractions = frame["__target__"].value_counts(normalize=True)
+            for label, fraction in fractions.items():
+                label_frame = frame[frame["__target__"] == label]
+                label_n = max(2, int(round(limit * float(fraction))))
+                sampled_parts.append(
+                    label_frame.sample(n=min(label_n, len(label_frame)), random_state=42)
+                )
+            sampled = pd.concat(sampled_parts).sample(frac=1, random_state=42)
+            return sampled.drop(columns=["__target__"]), sampled["__target__"], limit
+
+        sampled_index = x.sample(n=limit, random_state=42).index
+        return x.loc[sampled_index], y.loc[sampled_index], limit
 
     def score_predictions(
         self,
@@ -383,6 +417,8 @@ Rules:
         valid = y.notna()
         x = x.loc[valid]
         y = y.loc[valid]
+        original_training_rows = len(x)
+        x, y, used_training_rows = self.limit_training_rows(x, y, config.problem_type, config.mode)
 
         session_id = str(uuid4())
         profile = load_profile(config.dataset_id)
@@ -397,7 +433,10 @@ Rules:
             {
                 "type": "start",
                 "progress_pct": 0,
-                "message": f"Starting training session {session_id} with {len(config.algorithms)} models.",
+                "message": (
+                    f"Starting training session {session_id} with {len(config.algorithms)} models. "
+                    f"Using {used_training_rows:,} of {original_training_rows:,} rows for interactive training."
+                ),
             }
         ) + "\n"
 

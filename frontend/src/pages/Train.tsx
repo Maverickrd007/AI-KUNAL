@@ -3,12 +3,14 @@ import { motion } from 'framer-motion';
 import { MetricsDashboard } from '../components/training/MetricsDashboard';
 import { ModelSelector } from '../components/training/ModelSelector';
 import { TrainingProgress } from '../components/training/TrainingProgress';
+import { useTrainingStream } from '../hooks/useTrainingStream';
 import { useTrainingStore } from '../store/trainingStore';
 
 export default function Train() {
   const isTraining = useTrainingStore((state) => state.isTraining);
   const session = useTrainingStore((state) => state.session);
   const error = useTrainingStore((state) => state.trainingError);
+  const { startTraining } = useTrainingStream();
 
   return (
     <motion.div
@@ -28,7 +30,7 @@ export default function Train() {
           <div className="mt-1 text-red-600">Try fewer algorithms or confirm the target column has valid values.</div>
         </div>
       )}
-      {isTraining ? <TrainingProgress /> : <ModelSelector />}
+      {isTraining ? <TrainingProgress /> : <ModelSelector onStartTraining={(config) => void startTraining(config)} />}
       {session && !isTraining && <MetricsDashboard session={session} />}
     </motion.div>
   );

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { BrainCircuit } from 'lucide-react';
 
-import { useTrainingStream } from '../../hooks/useTrainingStream';
 import { titleCase } from '../../lib/formatters';
 import { useDatasetStore } from '../../store/datasetStore';
-import type { Algorithm, TrainingMode } from '../../types';
+import type { Algorithm, TrainingConfig, TrainingMode } from '../../types';
 
 const algorithms: Algorithm[] = [
   'logistic_regression',
@@ -14,10 +13,13 @@ const algorithms: Algorithm[] = [
   'gradient_boosting',
 ];
 
-export function ModelSelector() {
+interface ModelSelectorProps {
+  onStartTraining: (config: TrainingConfig) => void;
+}
+
+export function ModelSelector({ onStartTraining }: ModelSelectorProps) {
   const profile = useDatasetStore((state) => state.profile);
   const cleaningResult = useDatasetStore((state) => state.cleaningResult);
-  const { startTraining } = useTrainingStream();
   const [selectedAlgorithms, setSelectedAlgorithms] = useState<Algorithm[]>(algorithms);
   const [mode, setMode] = useState<TrainingMode>('balanced');
   const [target, setTarget] = useState('');
@@ -46,7 +48,7 @@ export function ModelSelector() {
       : profile.problem_type;
 
   const start = () => {
-    void startTraining({
+    onStartTraining({
       dataset_id: cleaningResult?.cleaned_dataset_id ?? profile.dataset_id,
       target_column: target,
       problem_type: problemType,
@@ -135,6 +137,7 @@ export function ModelSelector() {
           <span className="w-10 text-text-primary">{Math.round(testSize * 100)}%</span>
         </label>
         <button
+          type="button"
           disabled={!target || selectedAlgorithms.length === 0}
           onClick={start}
           className="ml-auto inline-flex items-center gap-2 rounded bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"

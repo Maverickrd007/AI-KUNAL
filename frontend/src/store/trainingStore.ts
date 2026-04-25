@@ -26,7 +26,12 @@ export const useTrainingStore = create<TrainingState>((set) => ({
   addProgressEvent: (event) =>
     set((state) => ({ progressEvents: [...state.progressEvents.slice(-120), event] })),
   setSession: (session) => set({ session, isTraining: false, trainingError: null }),
-  setTraining: (isTraining) => set({ isTraining }),
+  setTraining: (isTraining) =>
+    set((state) => ({
+      isTraining,
+      progressEvents: isTraining ? [] : state.progressEvents,
+      trainingError: isTraining ? null : state.trainingError,
+    })),
   setTrainingError: (trainingError) => set({ trainingError, isTraining: false }),
   reset: () => set({ config: null, session: null, progressEvents: [], isTraining: false, trainingError: null }),
 }));

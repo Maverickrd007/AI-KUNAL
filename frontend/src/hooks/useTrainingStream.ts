@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import axios from 'axios';
 
 import { trainModels } from '../lib/api';
 import { useSessionStore } from '../store/sessionStore';
@@ -31,7 +32,12 @@ export function useTrainingStream() {
           setActiveExperiment(session.experiment_id);
         }
       } catch (error) {
-        setTrainingError(error instanceof Error ? error.message : 'Training failed.');
+        const message = axios.isAxiosError(error)
+          ? error.response?.data?.message ?? error.response?.data?.detail ?? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Training failed.';
+        setTrainingError(message);
       }
     },
     [setActiveExperiment, setConfig, setSession, setTraining, setTrainingError],
