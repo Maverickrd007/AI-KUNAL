@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 
 RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 COPY --from=build /app/dist ./dist
 

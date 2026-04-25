@@ -1,6 +1,56 @@
 # Deploy AstraML
 
-The production deployment runs three containers:
+## Option A: Single Web Service
+
+Use this for Render, Railway, Fly.io, or any host that expects one Docker web service.
+
+The root `Dockerfile` runs:
+
+- Nginx for the React frontend
+- Express backend on localhost port `3001`
+- FastAPI ML service on localhost port `8000`
+
+Public traffic only hits Nginx on port `80`. Nginx proxies `/api`, `/ws`, and `/health` internally.
+
+### Render
+
+1. Push this repo to GitHub.
+2. In Render, create a new Blueprint from the repo.
+3. Render will read `render.yaml`.
+4. Set secret env vars:
+
+```bash
+GROQ_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+5. Update `FRONTEND_ORIGIN` in Render to the final Render URL or your custom domain.
+
+Persistent files are stored on the mounted disk at `/app/data`.
+
+### Generic Docker Web Service
+
+Build and run:
+
+```bash
+docker build -t astraml .
+docker run -p 80:80 \
+  -e GROQ_API_KEY=... \
+  -e GEMINI_API_KEY=... \
+  -e JWT_SECRET=replace_with_a_long_random_secret \
+  -v astraml_data:/app/data \
+  astraml
+```
+
+Open:
+
+```text
+http://localhost
+```
+
+## Option B: Multi-Container Docker Compose
+
+The production Compose deployment runs three containers:
 
 - `frontend`: Nginx serving the built React app and proxying `/api` + `/ws`
 - `backend`: compiled Express API on port `3001`

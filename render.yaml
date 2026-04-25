@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: astraml
+    runtime: docker
+    plan: standard
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        value: https://astraml.onrender.com
+      - key: MAX_FILE_SIZE_MB
+        value: "50"
+    disk:
+      name: astraml-data
+      mountPath: /app/data
+      sizeGB: 5
