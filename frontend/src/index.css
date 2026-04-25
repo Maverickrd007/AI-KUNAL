@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0f172a;
+  background: #ffffff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-width: 1024px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.skeleton {
+  @apply animate-pulse rounded bg-slate-100;
+}
